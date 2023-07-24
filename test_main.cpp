@@ -3,7 +3,11 @@
 
 using namespace SPS;
 using namespace std;
+
 typedef Message<50> TestMessage;
+typedef Message<64, 0x344E> OtherTypeMessage;
+typedef Message<> DefaultMessage; //max info:254 , 0x3AA3 header
+
 //typical port
 struct MockPort {
 	bool available() { return true; }//there are chars to read
