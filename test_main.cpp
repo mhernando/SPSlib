@@ -76,8 +76,8 @@ void main()
 	TestMessage test2(1);
 	char buffer[100];
 	test2.write_cstring("Miguel Hernando");
-	test2.write<int>(1973);
-	test2.write<float>(171.5F);
+	test2.write<int>(194453);
+	test2.write<float>(71.675F);
 	test2.write_cstring("Madrid");
 
 	for (int i = 0; i < test2.datagram_size(); i++) {

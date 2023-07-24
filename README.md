@@ -6,7 +6,7 @@ After writing the similiar code in differente projects, and trying not to use ot
 
 
 
-# Message structure
+### Message structure
 
 | byte |   meaning          |
 |:----:|:------------------:|
@@ -20,5 +20,6 @@ After writing the similiar code in differente projects, and trying not to use ot
 | ...  |     ...            |
 
 # Typical ussage
-
+```C++
 typedef Message<50> TestMessage;
+```
