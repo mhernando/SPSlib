@@ -19,7 +19,7 @@ After writing the similiar code in differente projects, and trying not to use ot
 |   6  |     INFO[0]        |
 | ...  |     ...            |
 
-## Typical ussage
+## Typical use
 
 
 To use the library, just include the single, self-contained library header file.
