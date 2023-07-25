@@ -103,6 +103,7 @@ void main()
 	}
 
 	TestMessage::CircularBuffer<> mens_buffer;
+	TestMessage::CircularBuffer<50> mens_buffer2;
 	mens_buffer.push(test2);
 	mens_buffer.push(test2);
 	mens_buffer.push(test2);
