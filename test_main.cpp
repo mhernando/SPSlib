@@ -54,7 +54,12 @@ void send_Example() {
 	//when finished the message could be sent in this way
 	for (int i = 0; i < test.datagram_size(); i++)port.send(test[i]);
 }
-
+//conditions that makes two messages equal (same type of info for the same item)
+//this is useful when the messages are precessed at lower rate in order to take only the last command.
+bool compare_example(const TestMessage& m1, const TestMessage& m2) {
+	if ((m1.id == m2.id) && (m1.size == m2.size))return true; //using size for simplicity
+	return false;
+}
 void main()
 {
 	//test an use examples
@@ -97,5 +102,14 @@ void main()
 		else cout << "agregado: " << test2.data[i] << endl;
 	}
 
-
+	TestMessage::CircularBuffer<> mens_buffer;
+	mens_buffer.push(test2);
+	mens_buffer.push(test2);
+	mens_buffer.push(test2);
+	mens_buffer.push_single(TestMessage(1)); //this one should change the first appearance of 
+	while (mens_buffer.there_is_msg()) {
+		auto m = mens_buffer.getMessage();
+		cout << "circular buffer: "<< m.id <<"-->"<<m.crc<< endl;
+	}
+	mens_buffer.push_single(TestMessage(1), compare_example); //this one should change the first appearance of 
 }
