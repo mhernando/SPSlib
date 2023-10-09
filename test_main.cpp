@@ -66,7 +66,7 @@ void main()
 	TestMessage::MsgReader reader;
 	TestMessage test(10);
 	cout << hex;
-	test.write_cstring("ABCDEF ABCDEF");
+	//test.write_cstring("ABCDEF ABCDEF");
 	test.write<int>(1973);
 	for (int i = 0; i < test.datagram_size(); i++)cout << +test[i]<<" ";
 	cout << endl;
@@ -88,7 +88,9 @@ void main()
 	test2.write<int>(194453);
 	test2.write<float>(71.675F);
 	test2.write_cstring("Madrid");
-
+	cout << endl << hex;
+	for (int i = 0; i < test2.datagram_size(); i++)cout << +test2[i] << " ";
+	cout << endl << dec;
 	for (int i = 0; i < test2.datagram_size(); i++) {
 		if (reader.add_uchar(test2.data[i])) {
 			cout << "Mensaje Leido Correctamente";
