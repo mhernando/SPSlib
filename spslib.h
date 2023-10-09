@@ -135,6 +135,39 @@ namespace SPS
                 return mens;
             };
         };
+        //GENERIC CircularBuffer
+        template<int BSIZE=100>
+        class CircularBuffer {
+            Message<_MAX_SIZE, _HEADER> buffer[BSIZE];
+            uchar_t init = 0;
+            uchar_t end = 0;
+        public:
+
+            void push(const Message & m)
+            {
+                buffer[end] = m;
+                if (++end >= BSIZE)end = 0;
+            }
+            void push_single(const Message & m, 
+                bool (*f)(const Message&, const Message&)= 
+                [](const Message& m1, const Message& m2) -> bool { return m1.id==m2.id; }) {
+                //check if there is message that should be overriden
+                uchar_t ind = init;
+                while (ind != end) {
+                    if (f(m, buffer[ind])) { buffer[ind] = m; return; }
+                    if (++ind >= BSIZE)ind = 0;
+                }
+                push(m);
+            }
+            bool there_is_msg() { return init != end; }
+            auto getMessage() {
+                if (init == end)return Message::none();
+                uchar_t ind = init++;
+                if (init >= BSIZE)init = 0;
+                return buffer[ind];
+            }
+
+        };
     private:
         uchar_t *_info_reader = info;
         static constexpr uint16_t FULLHEADER_SIZE = 5;

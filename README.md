@@ -19,7 +19,7 @@ After writing the similiar code in differente projects, and trying not to use ot
 |   6  |     INFO[0]        |
 | ...  |     ...            |
 
-## Typical ussage
+## Typical use
 
 
 To use the library, just include the single, self-contained library header file.
@@ -100,6 +100,40 @@ while (port.available()) {
 }
 ```
 Note that just as there are generic write functions, dual read functions have been implemented.
+
+##Circular buffer
+Circular Buffer creation. Generic class that specifies the buffer size as parameter. Default value is 100. 
+```C++
+	TestMessage::CircularBuffer<> mens_buffer;
+	TestMessage::CircularBuffer<50> mens_buffer2;
+```
+It is possible to push messages. Last in overrides the older messages when buffer size is overflown. 
+It is possible to define a single message policy. For example if you are transmiting the current value of a variable, probably you only want to proccess the last value. All the incomming messages sould overwrite the older ones that were not processed. 
+By default, if using push_single, messages with the same id are overwritten.
+```C++
+	mens_buffer.push(test2);
+	mens_buffer.push(test2);
+	mens_buffer.push(test2);
+	mens_buffer.push_single(TestMessage(1)); //this one should change the first appearance of 
+	while (mens_buffer.there_is_msg()) {
+		auto m = mens_buffer.getMessage();
+		cout << "circular buffer: "<< m.id <<"-->"<<m.crc<< endl;
+	}
+ ```
+A different policy could be  easily defined by a lamda or a normal function with the following format:
+
+```C++
+//conditions that makes two messages equal (same type of info for the same item)
+//this is useful when the messages are precessed at lower rate in order to take only the last command.
+bool compare_example(const TestMessage& m1, const TestMessage& m2) {
+	if ((m1.id == m2.id) && (m1.size == m2.size))return true; //using size for simplicity
+	return false;
+}
+ ```
+and iclude it as the second function parameter:
+```C++
+mens_buffer.push_single(TestMessage(1), compare_example); //this one should change the first appearance of 
+ ```
 
 ## some important tips
 
