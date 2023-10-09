@@ -28,8 +28,10 @@
 #define PACKED
 #endif
 
-//endianess verification
-// include something to verify that is LITTLE-ENDIAN
+//TODO:
+//  -endianess verification
+//   include something to verify that is LITTLE-ENDIAN
+//  -circular buffer
 
 //SPS is intended to work only between little-endian systems. Otherwise int reconstruction and crc will not work 
 namespace SPS
