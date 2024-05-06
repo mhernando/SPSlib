@@ -21,6 +21,7 @@
 
 #pragma once
 #include <cstdint>
+#include <cstddef>
 //Multiplatform struct pack hack 
 #ifndef _WIN32
 #define PACKED __attribute__((packed))
@@ -28,10 +29,11 @@
 #define PACKED
 #endif
 
-//TODO:
-//  -endianess verification
-//   include something to verify that is LITTLE-ENDIAN
-//  -circular buffer
+#include <iostream>
+using std::cout, std::endl;
+
+//endianess verification
+// include something to verify that is LITTLE-ENDIAN
 
 //SPS is intended to work only between little-endian systems. Otherwise int reconstruction and crc will not work 
 namespace SPS
@@ -47,8 +49,8 @@ namespace SPS
         union2byte() = default;
     };
  
-#pragma pack(1)
-    template <int _MAX_SIZE = 254, uint16_t _HEADER = 0x3AA3 >
+    #pragma pack(1)
+    template <int _MAX_SIZE=254, uint16_t _HEADER=0x3AA3 >  
     struct Message
     {
         union {
@@ -61,41 +63,41 @@ namespace SPS
                 uchar_t info[254];
             }PACKED;
         };
-
+        
         //commonly used constructors
-        Message() :header{ _HEADER }, size{ 0 } {}
-        Message(uchar_t cmd) : header{ _HEADER }, size{ 1 }, id{ cmd } { write_crc(); }
-        Message(uchar_t cmd, uchar_t value) : header{ _HEADER }, size{ 1 }, id{ cmd } { info[0] = value; write_crc(); }
+        Message() :header{ _HEADER }, size{ 0 }{}
+        Message(uchar_t cmd): header{ _HEADER }, size{ 1 }, id {cmd}{ write_crc(); }
+        Message(uchar_t cmd, uchar_t value) : header{ _HEADER }, size{ 2 }, id{ cmd }{ info[0] = value; write_crc();}
         uchar_t& operator[](int ind) { return data[ind]; }
         static auto& none() { static Message _none; return _none; }
         void write_crc() { crc = crc16(data + FULLHEADER_SIZE, size); }
-        bool check_crc() { return crc == crc16(data + FULLHEADER_SIZE, size); }
-        uint16_t datagram_size() const { return size + FULLHEADER_SIZE; }
+        bool check_crc() { return crc == crc16(data + FULLHEADER_SIZE, size);}
+        uint16_t datagram_size() const { return size + FULLHEADER_SIZE;}
 
         //info generic writters and readers
         template <typename T, typename TT = T> //a trick to forze explicit type specification
         bool write(TT var) {
             if (size + sizeof(TT) >= _MAX_SIZE)return false;
             union2byte<TT> aux(var);
-
-            uchar_t* p = info + size - 1;
+            
+            uchar_t * p = info + size - 1;
             for (uint16_t i = 0; i < sizeof(TT); i++)p[i] = aux.bytes[i];
-            size += sizeof(TT);
+            size+=sizeof(TT);
             write_crc();
             return true;
         }
-
+        
         template <typename T>
         auto read() { //if not possible returns the zero value
-            if (size - index_reader < sizeof(T))return T{};
+            if (size < sizeof(T)+index_reader)return T{};
             union2byte<T> aux;
             for (auto& a : aux.bytes)a = info[index_reader++];
             return aux.var;
         }
-
+        
         template <typename T, typename TT = T>
         void read_array(TT* v, uchar_t n) {
-            for (uchar_t i = 0; i < n; i++)v[i] = read<TT>();
+            for (uchar_t i = 0; i < n; i++)v[i]=read<TT>();
         }
 
         template <typename T, typename TT = T>
@@ -103,32 +105,32 @@ namespace SPS
             for (uchar_t i = 0; i < n; i++)write<TT>(v[i]);
         }
 
-        void write_cstring(const char* s) {
+        void write_cstring(const char *s) {
             uint8_t index = 0;
             uchar_t* p = info + size - 1;
-            while ((s[index] != 0) && (index + size < _MAX_SIZE)) {
-                p[index] = s[index];
+            while ((s[index] != 0) && (index+size < _MAX_SIZE)) {
+                p[index] = s[index]; 
                 index++;
             }
             p[index] = 0;
             size += index + 1;
             write_crc();
         }
-        char* read_cstring(char* s, uchar_t max) {
+        char * read_cstring(char* s, uchar_t max) {
             uint8_t index = 0;
 
-            while ((index + 1 < max) && (info[index_reader] != 0) && (index_reader < _MAX_SIZE))
-                s[index++] = info[index_reader++];
+            while ((index +1 < max) && (info[index_reader] != 0) && (index_reader<_MAX_SIZE))
+                 s[index++]= info[index_reader++];
             s[index++] = 0;
             if (info[index_reader] == 0)index_reader++;
             return s;
         }
-
+       
         //GENERIC MESSAGE READER
-        class MsgReader {
-            Message<_MAX_SIZE, _HEADER> mens;
+        class MsgReader{
+            Message<_MAX_SIZE,_HEADER> mens;
             uchar_t index;
-        public:
+         public:
             MsgReader() :index(0) {}
             bool add_uchar(uchar_t data);
             auto getMessage() {
@@ -137,21 +139,21 @@ namespace SPS
             };
         };
         //GENERIC CircularBuffer
-        template<int BSIZE = 100>
+        template<int BSIZE=100>
         class CircularBuffer {
             Message<_MAX_SIZE, _HEADER> buffer[BSIZE];
             uchar_t init = 0;
             uchar_t end = 0;
         public:
 
-            void push(const Message& m)
+            void push(const Message & m)
             {
                 buffer[end] = m;
                 if (++end >= BSIZE)end = 0;
             }
-            void push_single(const Message& m,
-                bool (*f)(const Message&, const Message&) =
-                [](const Message& m1, const Message& m2) -> bool { return m1.id == m2.id; }) {
+            void push_single(const Message & m, 
+                bool (*f)(const Message&, const Message&)= 
+                [](const Message& m1, const Message& m2) -> bool { return m1.id==m2.id; }) {
                 //check if there is message that should be overriden
                 uchar_t ind = init;
                 while (ind != end) {
@@ -174,8 +176,7 @@ namespace SPS
         static constexpr uint16_t FULLHEADER_SIZE = 5;
         static_assert(_MAX_SIZE < 255, "Message info can't exceed 254 bytes");
     }PACKED;
-#pragma pack()
-
+    #pragma pack()
 
     template <int M, uint16_t H>
     inline bool Message<M,H>::MsgReader::add_uchar(uchar_t data)
@@ -222,7 +223,7 @@ namespace SPS
         crc_tab16_init = true;
         crc = 0x0000; //CRC_START_16
         ptr = input_str;
-        if (ptr != NULL) for (a = 0; a < num_bytes; a++) {
+        if (ptr != nullptr) for (a = 0; a < (size_t)num_bytes; a++) {
             short_c = 0x00ff & (uint16_t)*ptr;
             tmp = crc ^ short_c;
             crc = (crc >> 8) ^ crc_tab16[tmp & 0xff];
